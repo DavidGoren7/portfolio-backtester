@@ -1,0 +1,76 @@
+# Default study configuration. Every tunable number lives here, not in code.
+
+data:
+  dir: data/raw
+  tickers: [SPY, EFA, EEM, AGG, TLT, GLD, VNQ]
+  max_gap_business_days: 5
+
+execution:
+  rebalance: month_end
+  lag_days: 1
+  cost_bps: 5
+  cash_rate_annual: 0.0
+
+walkforward:
+  scheme: expanding
+  min_train_months: 36
+  test_months: 12
+  selection_metric: sharpe_net
+
+statistics:
+  trading_days: 252
+  bootstrap_reps: 5000
+  bootstrap_mean_block: 20
+  ci_level: 0.95
+  seed: 20261029
+
+sensitivity:
+  cost_bps: [0, 2, 5, 10, 25]
+  lag_days: [1, 2]
+
+subperiods:
+  gfc: ["2008-01-01", "2009-06-30"]
+  covid: ["2020-02-01", "2020-06-30"]
+  inflation_2022: ["2022-01-01", "2022-12-31"]
+
+benchmarks:
+  equal_weight: {}
+  sixty_forty:
+    equity: SPY
+    bond: AGG
+    equity_weight: 0.6
+
+strategies:
+  trend_sma:
+    grid:
+      window: [100, 150, 200]
+  xs_momentum:
+    grid:
+      lookback: [63, 126, 189, 252]
+      top_k: [2, 3]
+    fixed:
+      skip: 21
+  inv_vol:
+    grid:
+      window: [40, 60, 120]
+  min_variance:
+    grid:
+      window: [126, 252]
+  trend_sma_vt:
+    base: trend_sma
+    overlay:
+      cov_window: 60
+      grid:
+        target_vol: [0.08, 0.10]
+  xs_momentum_vt:
+    base: xs_momentum
+    overlay:
+      cov_window: 60
+      grid:
+        target_vol: [0.08, 0.10]
+
+demo:
+  # Synthetic data only. Outputs go to reports/demo/ and are labeled DEMO.
+  n_days: 4000
+  n_assets: 7
+  seed: 7

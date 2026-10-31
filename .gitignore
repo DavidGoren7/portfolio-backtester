@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets
+.env
+*.key
+
+# Market data is not redistributed. Fetch it locally with `make data`.
+data/raw/*
+!data/raw/.gitkeep
+
+# Synthetic demo outputs are not committed. Real outputs under reports/real/ are.
+reports/demo/
