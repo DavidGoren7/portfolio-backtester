@@ -94,7 +94,7 @@ Format for new entries:
 
 ## The engine loops over trades, not days
 - Decision: between two executions, every holding just scales with its price relative to the segment start. The engine computes a whole segment with one array operation and loops only over execution dates.
-- Why: CLAUDE.md asks to loop only over rebalance dates. A daily loop gives the same numbers but is slower and hides the math.
+- Why: the project rules ask to loop only over rebalance dates. A daily loop gives the same numbers but is slower and hides the math.
 - Where in the code: `engine.run_backtest`.
 
 ## Training scores come from one full-history run per parameter set
