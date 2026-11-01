@@ -21,3 +21,19 @@ def raw_config() -> dict:
 @pytest.fixture
 def default_config_path() -> Path:
     return DEFAULT_CONFIG
+
+
+@pytest.fixture
+def cfg(default_config_path):
+    from backtester.config import load_config
+
+    return load_config(default_config_path)
+
+
+@pytest.fixture(scope="session")
+def synth_prices():
+    """About 3 years of seeded synthetic prices for the default 7 tickers."""
+    from backtester.synthetic import generate_prices
+
+    names = ["SPY", "EFA", "EEM", "AGG", "TLT", "GLD", "VNQ"]
+    return generate_prices(800, names, seed=11)
