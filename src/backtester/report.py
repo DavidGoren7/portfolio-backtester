@@ -399,7 +399,8 @@ def write_report_md(study: StudyResult, out_dir: Path, figures: list[Path]) -> P
         "Subperiods (out-of-sample only)",
         "subperiods",
         "oos_coverage is the share of the window inside the out-of-sample period. "
-        "Windows before it have no numbers on purpose.",
+        f"Windows below {study.config.statistics.subperiod_min_coverage:.0%} coverage "
+        "have no numbers on purpose: a partial window would show the wrong part of a crisis.",
     )
     section("Chosen parameters per fold", "fold_parameters")
     if "data_summary" in tbl:

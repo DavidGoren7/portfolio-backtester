@@ -131,3 +131,29 @@ def test_rerun_with_same_frictions_reproduces_oos(result, small_cfg, prices):
     pd.testing.assert_series_equal(again.net_returns, run.oos.net_returns)
     pricier = rerun_oos(prices, run, result.oos_start, small_cfg, cost_bps=25)
     assert pricier.net_returns.sum() < run.oos.net_returns.sum()
+
+
+def test_fold_blocks_follow_execution_dates_with_lag(small_raw_config, prices):
+    """Regression (M12 review): per-fold OOS windows start after the fold's own
+    trade executes, so the first `lag` days are not credited to the wrong fold."""
+    from backtester.config import parse_config
+    from backtester.walkforward import fold_block
+
+    small_raw_config["execution"]["lag_days"] = 2
+    cfg = parse_config(small_raw_config)
+    res = run_walkforward(prices, cfg)
+    run = res.runs["trend_sma"]
+    idx = prices.loc[res.oos_start :].index
+    covered = []
+    for rec in run.folds:
+        block = fold_block(run.oos.net_returns, idx, rec, lag=2)
+        exec_pos = idx.get_loc(rec.train_end) + 2
+        assert block.index[0] == idx[exec_pos + 1]
+        # The fold's own trade happens the close before its block starts.
+        assert idx[exec_pos] in run.oos.turnover.index
+        assert rec.oos_sharpe == pytest.approx(sharpe(block, 252), nan_ok=True)
+        covered.extend(block.index)
+    # Blocks tile the OOS period after the first execution, with no overlap.
+    assert len(covered) == len(set(covered))
+    first_exec = idx[idx.get_loc(res.oos_start) + 2]
+    assert pd.DatetimeIndex(covered).equals(run.oos.net_returns.loc[first_exec:].index[1:])

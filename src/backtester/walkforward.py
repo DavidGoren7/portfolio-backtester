@@ -127,6 +127,27 @@ def _select(scores: list[float]) -> int:
     return int(np.argmax(arr))
 
 
+def execution_date(index: pd.DatetimeIndex, signal_date: pd.Timestamp, lag: int) -> pd.Timestamp:
+    """The close at which a signal dated `signal_date` trades (capped at the last date)."""
+    pos = min(index.get_loc(signal_date) + lag, len(index) - 1)
+    return index[pos]
+
+
+def fold_block(net: pd.Series, index: pd.DatetimeIndex, rec: FoldRecord, lag: int) -> pd.Series:
+    """Returns earned by fold `rec`'s holdings.
+
+    Fold j's holdings are bought at the close of exec(B_j) = B_j + lag days and
+    held until the close of exec(B_j+1), so its market returns are the days in
+    (exec(B_j), exec(B_j+1)]. Using (B_j, B_j+1] instead would credit the first
+    `lag` days of each block to the previous fold's holdings. The cost of
+    switching into fold j+1 is charged on exec(B_j+1), the last day here.
+    """
+    start = execution_date(index, rec.train_end, lag)
+    is_last = rec.test_end == index[-1]
+    end = index[-1] if is_last else execution_date(index, rec.test_end, lag)
+    return net.loc[(net.index > start) & (net.index <= end)]
+
+
 def run_walkforward(prices: pd.DataFrame, cfg: Config) -> WalkForwardResult:
     """Run the full walk-forward study for every configured strategy."""
     ex, st, wf = cfg.execution, cfg.statistics, cfg.walkforward
@@ -182,9 +203,7 @@ def run_walkforward(prices: pd.DataFrame, cfg: Config) -> WalkForwardResult:
         stitched = pd.concat(pieces)
         oos = backtest(oos_prices, stitched)
         for rec in records:
-            block = oos.net_returns.loc[
-                (oos.net_returns.index > rec.train_end) & (oos.net_returns.index <= rec.test_end)
-            ]
+            block = fold_block(oos.net_returns, oos_prices.index, rec, ex.lag_days)
             rec.oos_sharpe = sharpe(block, st.trading_days, ex.cash_rate_annual)
         runs[name] = StrategyRun(
             name=name,

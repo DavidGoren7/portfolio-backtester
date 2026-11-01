@@ -59,7 +59,9 @@ Limits: percentile intervals can under-cover in small samples; the mean block le
 
 Cost sensitivity reruns each strategy's stitched out-of-sample signals at 0, 2, 5, 10, and 25 bps. Lag sensitivity reruns them at lags 1 and 2. The per-fold parameter choices stay fixed (they were selected at 5 bps and lag 1), so these tables show how fragile the realized strategy is, not what re-tuning would do.
 
-Subperiods report total return and max drawdown over out-of-sample days inside each window, plus the share of the window that is out-of-sample.
+Subperiods report total return and max drawdown over out-of-sample days inside each window, plus the share of the window that is out-of-sample. A window is reported only if at least 90% of it is out-of-sample (`subperiod_min_coverage`); otherwise it would show the wrong part of a crisis.
+
+Per-fold out-of-sample Sharpe ratios use the days earned by that fold's own holdings: (exec(B_j), exec(B_(j+1))], where exec(B) is the execution date of the signal at B.
 
 ## Multiple testing
 

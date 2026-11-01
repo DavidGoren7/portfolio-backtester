@@ -79,7 +79,7 @@ def test_subperiods_report_coverage_and_skip_uncovered(returns):
         "before": (pd.Timestamp("2010-01-01"), pd.Timestamp("2010-12-31")),
         "inside": (pd.Timestamp("2015-03-01"), pd.Timestamp("2015-06-30")),
     }
-    table = subperiod_table(returns, windows)
+    table = subperiod_table(returns, windows, min_coverage=0.9)
     before = table[table["subperiod"] == "before"]
     assert (before["oos_coverage"] == 0).all()
     assert before["total_return"].isna().all()
@@ -87,3 +87,14 @@ def test_subperiods_report_coverage_and_skip_uncovered(returns):
     r = returns.loc["2015-03-01":"2015-06-30", "strat"]
     assert inside["total_return"] == pytest.approx((1 + r).prod() - 1)
     assert inside["oos_coverage"] == pytest.approx(1.0)
+
+
+def test_partly_covered_subperiod_is_not_reported(returns):
+    """Regression (M12 review): a window mostly before the OOS start must not
+    show numbers that read like crisis performance."""
+    windows = {"gfc_like": (pd.Timestamp("2014-06-01"), pd.Timestamp("2015-03-31"))}
+    table = subperiod_table(returns, windows, min_coverage=0.9)
+    assert (table["oos_coverage"] < 0.9).all()
+    assert table["total_return"].isna().all()
+    assert table["max_drawdown"].isna().all()
+    assert table["status"].str.startswith("not reported").all()

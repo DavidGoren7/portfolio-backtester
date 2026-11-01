@@ -61,6 +61,7 @@ class StatisticsConfig:
     bootstrap_mean_block: float
     ci_level: float
     seed: int
+    subperiod_min_coverage: float
 
 
 @dataclass(frozen=True)
@@ -306,7 +307,14 @@ def parse_config(raw: dict[str, Any]) -> Config:
     _require_keys(
         "statistics",
         s,
-        {"trading_days", "bootstrap_reps", "bootstrap_mean_block", "ci_level", "seed"},
+        {
+            "trading_days",
+            "bootstrap_reps",
+            "bootstrap_mean_block",
+            "ci_level",
+            "seed",
+            "subperiod_min_coverage",
+        },
     )
     statistics = StatisticsConfig(
         trading_days=_pos_int("statistics.trading_days", s["trading_days"]),
@@ -316,6 +324,9 @@ def parse_config(raw: dict[str, Any]) -> Config:
         ),
         ci_level=_number("statistics.ci_level", s["ci_level"], 0.5, 0.999),
         seed=_pos_int("statistics.seed", s["seed"], allow_zero=True),
+        subperiod_min_coverage=_number(
+            "statistics.subperiod_min_coverage", s["subperiod_min_coverage"], 0, 1
+        ),
     )
 
     sens = raw["sensitivity"]

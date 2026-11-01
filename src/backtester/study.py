@@ -37,12 +37,14 @@ class StudyResult:
     config: Config
 
 
-def subperiod_table(oos_net: pd.DataFrame, windows: dict) -> pd.DataFrame:
+def subperiod_table(oos_net: pd.DataFrame, windows: dict, min_coverage: float) -> pd.DataFrame:
     """Total return and max drawdown per strategy inside each window, OOS only.
 
     `oos_coverage` is the share of the window's business days that fall inside
-    the out-of-sample period. A window before the OOS start has coverage 0 and
-    no numbers, because in-sample numbers would not be honest here.
+    the out-of-sample period. Numbers are reported only when coverage is at
+    least `min_coverage`. A partly covered window would otherwise mislabel
+    performance: with real data the OOS period starts around Dec 2008, so a
+    "GFC" row would show only the 2009 rebound, not the crash.
     """
     rows = []
     for label, (start, end) in windows.items():
@@ -51,7 +53,8 @@ def subperiod_table(oos_net: pd.DataFrame, windows: dict) -> pd.DataFrame:
         coverage = len(covered.intersection(window_days)) / max(len(window_days), 1)
         for name in oos_net.columns:
             r = oos_net.loc[covered, name]
-            has = len(r) > 0
+            has = len(r) > 0 and coverage >= min_coverage
+            status = "reported" if has else f"not reported: {coverage:.0%} out-of-sample"
             rows.append(
                 {
                     "subperiod": label,
@@ -59,6 +62,7 @@ def subperiod_table(oos_net: pd.DataFrame, windows: dict) -> pd.DataFrame:
                     "end": end.date(),
                     "oos_coverage": coverage,
                     "strategy": name,
+                    "status": status,
                     "total_return": float((1 + r).prod() - 1) if has else np.nan,
                     "max_drawdown": max_drawdown(r) if has else np.nan,
                 }
@@ -129,7 +133,7 @@ def run_study(
         folds=folds_frame(wf),
         cost_sensitivity=cost_sens,
         lag_sensitivity=lag_sens,
-        subperiods=subperiod_table(oos_net, cfg.subperiods),
+        subperiods=subperiod_table(oos_net, cfg.subperiods, st.subperiod_min_coverage),
         data_report=data_report,
         config=cfg,
     )

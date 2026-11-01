@@ -158,6 +158,7 @@ Format for new entries:
 ## Subperiods are out-of-sample only, with a coverage column
 - Decision: each crisis window reports total return and max drawdown using out-of-sample days only, plus the share of the window that is out-of-sample. Windows before the out-of-sample start show no numbers.
 - Why: with real data the out-of-sample period starts around the end of 2008, so the GFC window is only partly covered. Filling the gap with in-sample numbers would mix tuned and untuned results.
+- Update after review: windows below 90% out-of-sample coverage (`statistics.subperiod_min_coverage`) now show no numbers and a "not reported" status. A partly covered GFC row would have shown only the 2009 rebound under a "GFC" label.
 
 ## Deflated Sharpe Ratio not implemented
 - Decision: skipped the stretch goal. The README and report say the multiple-testing problem is acknowledged but not corrected.
@@ -185,3 +186,8 @@ Format for new entries:
 ## M10 skipped: no real data in this environment
 - Decision: the build environment has no market data (and should not try to download any), so M10 was skipped. The README results block says NOT RUN ON REAL DATA.
 - Next step for the owner: `make data && make run && make report` on your own computer.
+
+## Final review (M12)
+- What: a fresh agent with no memory of the implementation reviewed SPEC.md and the diff for correctness only. It rebuilt the engine as an independent day-by-day loop and matched our net returns to within 4e-16, and found no high-severity issues.
+- Finding 1 (low, fixed): per-fold out-of-sample Sharpe used the window (B_j, B_j+1]. With lag L, the first L days of each window were still earned by the previous fold's holdings. The headline series was unaffected. Fix: `walkforward.fold_block` uses (exec(B_j), exec(B_j+1)]. Regression test: `test_fold_blocks_follow_execution_dates_with_lag`.
+- Finding 2 (low, fixed): the GFC subperiod is mostly before the out-of-sample start on real data, so its numbers would describe the rebound, not the crash. Fix: coverage threshold (see the subperiod entry above). Regression test: `test_partly_covered_subperiod_is_not_reported`.

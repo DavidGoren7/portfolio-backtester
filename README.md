@@ -43,7 +43,7 @@ Every non-obvious choice, with the alternatives considered, is in [DECISIONS.md]
 ## Limitations
 
 - **Hindsight in the universe.** These ETFs were chosen because they exist and are liquid today, so survivorship bias is possible.
-- **Short sample.** About 20 years, with only a few distinct market regimes, and the out-of-sample period starts around the end of 2008, so the GFC is only partly covered.
+- **Short sample.** About 20 years, with only a few distinct market regimes, and the out-of-sample period starts around the end of 2008, so the GFC window is too short of out-of-sample data to report and is left blank.
 - **Multiple testing.** 40 strategy-parameter combinations are tried. The Deflated Sharpe Ratio is not implemented, so this bias is acknowledged but not corrected.
 - **Simple frictions.** Costs are a flat rate on traded notional with a one or two day lag. No bid-ask spread model, no market impact, no taxes.
 - **Cash earns 0%.** This understates cash-heavy strategies such as trend following when rates were high.
