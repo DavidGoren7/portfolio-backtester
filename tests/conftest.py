@@ -62,3 +62,8 @@ def small_cfg(raw_config):
     from backtester.config import parse_config
 
     return parse_config(shrink_config(raw_config))
+
+
+@pytest.fixture
+def small_raw_config(raw_config) -> dict:
+    return shrink_config(raw_config)
