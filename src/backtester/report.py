@@ -18,7 +18,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from backtester.metrics import drawdown_series, rolling_sharpe  # noqa: E402
-from backtester.strategies import BENCHMARKS  # noqa: E402
+from backtester.strategies import BENCHMARKS, param_grid  # noqa: E402
 from backtester.study import StudyResult  # noqa: E402
 
 RESULTS_START = "<!-- RESULTS:START -->"
@@ -45,8 +45,9 @@ METRIC_LABELS = {
 # Benchmarks in neutral tones, strategies in distinct colors, fixed per name.
 _PALETTE = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e", "#17becf", "#8c564b"]
 _BENCH_COLORS = {"equal_weight": "#555555", "sixty_forty": "#aaaaaa"}
+CASH_COLOR = "#e6e6e6"
 ROLLING_WINDOW_DAYS = 252
-FIG_SIZE = (9, 4.5)
+FIG_SIZE = (10, 4.5)
 FIG_DPI = 120
 
 
@@ -158,6 +159,11 @@ def _style(ax) -> None:
     ax.grid(axis="y", alpha=0.3)
 
 
+def _legend(ax) -> None:
+    """Legend outside the plot area on the right, so it never hides data."""
+    ax.legend(fontsize=8, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+
+
 def _line_kwargs(name: str, colors: dict[str, str]) -> dict:
     bench = name in BENCHMARKS
     return {"color": colors[name], "lw": 1.6 if bench else 1.2, "ls": "--" if bench else "-"}
@@ -171,7 +177,7 @@ def fig_equity(study: StudyResult, colors, path: Path) -> Path:
     ax.set_yscale("log")
     ax.set_ylabel("Growth of 1 (log scale)")
     ax.set_title(_title(study, "Out-of-sample equity, net of costs"))
-    ax.legend(ncol=2, fontsize=8, frameon=False)
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
@@ -183,7 +189,7 @@ def fig_drawdowns(study: StudyResult, colors, path: Path) -> Path:
         ax.plot(dd.index, dd * 100, label=name, **_line_kwargs(name, colors))
     ax.set_ylabel("Drawdown (%)")
     ax.set_title(_title(study, "Drawdown from running peak"))
-    ax.legend(ncol=2, fontsize=8, frameon=False)
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
@@ -199,7 +205,7 @@ def fig_rolling_sharpe(study: StudyResult, colors, path: Path) -> Path:
     ax.axhline(0, color="black", lw=0.8)
     ax.set_ylabel("Sharpe, trailing 252 days")
     ax.set_title(_title(study, "Rolling one-year Sharpe ratio"))
-    ax.legend(ncol=2, fontsize=8, frameon=False)
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
@@ -207,12 +213,15 @@ def fig_rolling_sharpe(study: StudyResult, colors, path: Path) -> Path:
 def fig_weights(study: StudyResult, name: str, path: Path) -> Path:
     w = study.walkforward.runs[name].oos.weights
     w = w.assign(cash=(1 - w.sum(axis=1)).clip(lower=0))
+    asset_colors = [plt.get_cmap("tab10")(i) for i in range(w.shape[1] - 1)]
     fig, ax = plt.subplots(figsize=FIG_SIZE)
-    ax.stackplot(w.index, w.T.to_numpy(), labels=w.columns, alpha=0.85)
+    ax.stackplot(
+        w.index, w.T.to_numpy(), labels=w.columns, colors=[*asset_colors, CASH_COLOR], alpha=0.9
+    )
     ax.set_ylim(0, 1)
     ax.set_ylabel("Weight")
     ax.set_title(_title(study, f"Daily weights after drift: {name}"))
-    ax.legend(ncol=4, fontsize=8, frameon=False, loc="upper left")
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
@@ -223,8 +232,13 @@ def fig_param_stability(study: StudyResult, colors, path: Path) -> Path:
     axes = np.atleast_1d(axes)
     for ax, name in zip(axes, tuned, strict=True):
         folds = study.folds[study.folds["strategy"] == name]
-        labels = list(dict.fromkeys(folds["params"]))
-        codes = [labels.index(p) for p in folds["params"]]
+        grid = param_grid(study.config, name)
+        varying = [k for k in grid[0] if len({str(g[k]) for g in grid}) > 1]
+        chosen = [r.params for r in study.walkforward.runs[name].folds]
+        short = [", ".join(f"{k}={p[k]}" for k in varying) or "-" for p in chosen]
+        order = [", ".join(f"{k}={g[k]}" for k in varying) or "-" for g in grid]
+        labels = [lab for lab in dict.fromkeys(order) if lab in short]
+        codes = [labels.index(lab) for lab in short]
         ax.step(folds["fold"], codes, where="mid", color=colors[name])
         ax.scatter(folds["fold"], codes, color=colors[name], s=12)
         ax.set_yticks(range(len(labels)))
@@ -232,12 +246,12 @@ def fig_param_stability(study: StudyResult, colors, path: Path) -> Path:
         ax.set_title(name, fontsize=9, loc="left")
         _style(ax)
     axes[-1].set_xlabel("Fold")
-    fig.suptitle(_title(study, "Chosen parameters by fold"))
+    fig.suptitle(_title(study, "Chosen parameters by fold (only parameters that vary)"))
     return _save(fig, path)
 
 
 def fig_is_vs_oos(study: StudyResult, colors, path: Path) -> Path:
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = plt.subplots(figsize=(8, 5))
     tuned = study.folds[~study.folds["strategy"].isin(BENCHMARKS)]
     for name, grp in tuned.groupby("strategy", sort=False):
         ax.scatter(grp["is_sharpe"], grp["oos_sharpe"], label=name, color=colors[name], s=18)
@@ -250,7 +264,7 @@ def fig_is_vs_oos(study: StudyResult, colors, path: Path) -> Path:
     ax.set_xlabel("In-sample Sharpe (chosen parameters)")
     ax.set_ylabel("Out-of-sample Sharpe (next block)")
     ax.set_title(_title(study, "In-sample vs out-of-sample, per fold"))
-    ax.legend(fontsize=7, frameon=False)
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
@@ -263,7 +277,7 @@ def fig_sharpe_vs_cost(study: StudyResult, colors, path: Path) -> Path:
     ax.set_xlabel("Cost (bps of traded notional)")
     ax.set_ylabel("Out-of-sample Sharpe")
     ax.set_title(_title(study, "Sharpe ratio versus transaction cost"))
-    ax.legend(ncol=2, fontsize=8, frameon=False)
+    _legend(ax)
     _style(ax)
     return _save(fig, path)
 
