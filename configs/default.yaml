@@ -23,6 +23,8 @@ statistics:
   bootstrap_mean_block: 20
   ci_level: 0.95
   seed: 20261029
+  # A crisis window is only reported if at least this share of it is out-of-sample.
+  subperiod_min_coverage: 0.9
 
 sensitivity:
   cost_bps: [0, 2, 5, 10, 25]

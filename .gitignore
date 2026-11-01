@@ -28,3 +28,7 @@ data/raw/*
 
 # Synthetic demo outputs are not committed. Real outputs under reports/real/ are.
 reports/demo/
+*.pkl
+
+# Local AI assistant instructions (kept on disk, not published)
+CLAUDE.md
