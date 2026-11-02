@@ -1,0 +1,10 @@
+| strategy | sharpe | ci_low | ci_high |
+| --- | --- | --- | --- |
+| equal_weight | 0.74 | 0.29 | 1.18 |
+| sixty_forty | 0.94 | 0.48 | 1.41 |
+| trend_sma | 0.79 | 0.40 | 1.18 |
+| xs_momentum | 0.71 | 0.31 | 1.11 |
+| inv_vol | 0.83 | 0.35 | 1.31 |
+| min_variance | 0.73 | 0.25 | 1.23 |
+| trend_sma_vt | 0.78 | 0.39 | 1.18 |
+| xs_momentum_vt | 0.61 | 0.16 | 1.09 |
