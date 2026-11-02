@@ -1,0 +1,16 @@
+| strategy | versus | sharpe_diff | ci_low | ci_high | share_above_zero |
+| --- | --- | --- | --- | --- | --- |
+| equal_weight | sixty_forty | -0.20 | -0.43 | 0.02 | 3.9% |
+| sixty_forty | equal_weight | 0.20 | -0.02 | 0.43 | 96.1% |
+| trend_sma | equal_weight | 0.05 | -0.27 | 0.37 | 61.2% |
+| trend_sma | sixty_forty | -0.15 | -0.56 | 0.24 | 23.2% |
+| xs_momentum | equal_weight | -0.03 | -0.35 | 0.28 | 42.5% |
+| xs_momentum | sixty_forty | -0.23 | -0.62 | 0.15 | 12.0% |
+| inv_vol | equal_weight | 0.09 | -0.04 | 0.22 | 90.7% |
+| inv_vol | sixty_forty | -0.11 | -0.40 | 0.17 | 22.2% |
+| min_variance | equal_weight | -0.01 | -0.29 | 0.28 | 47.3% |
+| min_variance | sixty_forty | -0.21 | -0.59 | 0.18 | 14.6% |
+| trend_sma_vt | equal_weight | 0.04 | -0.27 | 0.37 | 60.5% |
+| trend_sma_vt | sixty_forty | -0.15 | -0.56 | 0.23 | 22.8% |
+| xs_momentum_vt | equal_weight | -0.13 | -0.45 | 0.19 | 22.2% |
+| xs_momentum_vt | sixty_forty | -0.33 | -0.72 | 0.05 | 4.3% |
